@@ -2,8 +2,8 @@ name: Daily App Idea Bot (Gemini)
 
 on:
   schedule:
-    # Her gün 06:00 UTC (Türkiye saatiyle 09:00 civarı)
-    - cron: "0 6 * * *"
+    - cron: "0 */3 * * *"
+
   workflow_dispatch:
 
 jobs:
