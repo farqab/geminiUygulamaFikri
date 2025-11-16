@@ -60,7 +60,6 @@ class PlayStoreScraper:
     def __init__(self):
         self.session = requests.Session()
         self.headers = {
-            # Biraz normal tarayıcıya benzesin diye User-Agent ayarlıyoruz
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -100,7 +99,7 @@ class PlayStoreScraper:
     def fetch_app_details(self, app_id: str):
         """
         Uygulamanın detay sayfasından temel bilgileri çeker.
-        Not: Play Store HTML yapısı değişebilir, bu v1 "best effort" bir scraper.
+        Not: Play Store HTML yapısı değişebilir, bu v1 'best effort' bir scraper.
         """
         params = {"id": app_id, "hl": "en", "gl": "us"}
         dprint(f"[Scraper] Fetching details for app_id={app_id}")
@@ -125,7 +124,6 @@ class PlayStoreScraper:
         if meta_desc and meta_desc.get("content"):
             summary = meta_desc["content"].strip()
         else:
-            # Fallback: bazı div'lerde açıklama olabilir
             desc_div = soup.find("div", attrs={"jsname": "bN97Pc"}) or soup.find("div", attrs={"jsname": "sngebd"})
             if desc_div:
                 summary = desc_div.get_text(" ", strip=True)
@@ -180,7 +178,7 @@ def gather_niche_apps(niche: dict, max_apps: int = 5):
                 except Exception as e:
                     dprint(f"[Scraper] WARN: detay çekilemedi ({app_id}):", repr(e))
             if app_details:
-                break  # Bu keyword yeterli uygulama döndürdüyse diğer keyword'lere geçmeye gerek yok
+                break
         except Exception as e:
             dprint(f"[Scraper] WARN: arama başarısız ({keyword}):", repr(e))
 
@@ -232,7 +230,7 @@ def generate_research_with_real_data(niche: dict, apps: list) -> str:
 
     prompt = f"""
 Sen deneyimli bir ürün yöneticisi ve mobil uygulama stratejisti olarak çalışıyorsun.
-Aşağıda Google Play Store'dan çekilmiş, *gerçek* uygulama örnekleri var.
+Aşağıda Google Play Store'dan çekilmiş, gerçek uygulama örnekleri var.
 
 Niş (Türkçe açıklama): {niche_name}
 
@@ -242,27 +240,27 @@ Ham veri (en çok ilgilendiğimiz app'ler):
 
 Lütfen TÜRKÇE ve aşağıdaki başlıklarla net, iş odaklı bir analiz üret:
 
-1) 🎯 Nişin Gerçek Durumu
+1) Nişin Gerçek Durumu
 - Bu nişe göre genel tablo ne?
 - Kullanıcıların çözdürmek istediği ana problemler bu app'lere göre neler?
 
-2) 📱 Rakiplerin Güçlü Yanları
+2) Rakiplerin Güçlü Yanları
 - Örnek uygulamalara bakarak ortak güçlü yönleri madde madde özetle.
 - Özellikle: UX, basitlik, görsel kalite, fonksiyon seti.
 
-3) 😬 Zayıf Noktalar ve Fırsatlar
+3) Zayıf Noktalar ve Fırsatlar
 - Örnek uygulamalarda muhtemel zayıflıkları çıkar (reklam, karmaşık akış, gereksiz kayıt, vb.)
 - Bu zayıflıklardan yola çıkarak, bizim uygulamanın nasıl fark yaratabileceğine dair 4–6 madde yaz.
 
-4) 🧠 Yeni Uygulama için Net Öneriler
+4) Yeni Uygulama için Net Öneriler
 - 'Eğer ben bu nişte yeni bir app çıkaracak olsam' diyerek konuş.
 - 5–7 tane çok net özellik/farklılaşma fikri ver (örn: sadece öğrencilere özel mod, offline çalışma, kişiselleştirilmiş dashboard, vb.)
 
-5) 💰 Gelir Modeli Alternatifleri
+5) Gelir Modeli Alternatifleri
 - Bu niş için mantıklı 2–3 gelir modeli öner (reklam, tek seferlik premium, abonelik, vs.)
 - Her model için avantaj/dezavantajı 1'er cümle ile yaz.
 
-6) ⚙️ İlk 1 Hafta MVP Planı
+6) İlk 1 Hafta MVP Planı
 - 1 hafta içinde yapılabilecek minimum özellik setini madde madde yaz (3–6 madde).
 - Abartma, gerçekten yapılabilecek kadar sade tut.
 
@@ -300,7 +298,7 @@ def send_telegram_message(text: str):
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": text,
-        "parse_mode": "Markdown"
+        # parse_mode kullanmıyoruz, yoksa Markdown hatası çıkabiliyor
     }
 
     resp = requests.post(url, json=payload, timeout=20)
@@ -339,10 +337,10 @@ if __name__ == "__main__":
         now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
         message = (
-            "📊 *Günün Play Store Pazar Analizi (Gerçek Veri + Gemini)*\n\n"
-            f"🎯 Niş: *{niche['name_tr']}*\n\n"
+            "Günün Play Store Pazar Analizi (Gerçek Veri + Gemini)\n\n"
+            f"Niş: {niche['name_tr']}\n\n"
             f"{analysis}\n\n"
-            f"⏰ {now}"
+            f"Zaman: {now}"
         )
 
         dprint("Oluşturulan mesaj:\n", message)
