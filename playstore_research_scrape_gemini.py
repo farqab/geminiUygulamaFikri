@@ -284,29 +284,46 @@ Gereksiz süsleme yok, direkt işimize yarayacak fikir ve tespitler ver.
 # ======================
 
 def send_telegram_message(text: str):
+    """
+    Telegram mesaj limitini aşmamak için metni parçalara bölüp gönderir.
+    Telegram Bot API limit ~4096 karakter.
+    Burada güvenli olmak için chunk_size = 3500 kullandım.
+    """
     if not TELEGRAM_BOT_TOKEN:
         raise RuntimeError("TELEGRAM_BOT_TOKEN tanımlı değil.")
     if not TELEGRAM_CHAT_ID:
         raise RuntimeError("TELEGRAM_CHAT_ID tanımlı değil.")
 
     token_preview = TELEGRAM_BOT_TOKEN[:8] + "..."
-    dprint("Telegram'a mesaj gönderiliyor...")
+    dprint("Telegram'a mesaj gönderiliyor (chunking)...")
     dprint("Bot token preview:", token_preview)
     dprint("Chat ID:", TELEGRAM_CHAT_ID)
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        # parse_mode kullanmıyoruz, yoksa Markdown hatası çıkabiliyor
-    }
 
-    resp = requests.post(url, json=payload, timeout=20)
-    dprint("Telegram status code:", resp.status_code)
-    dprint("Telegram response:", resp.text)
+    chunk_size = 3500
+    total_len = len(text)
+    dprint(f"Mesaj toplam uzunluğu: {total_len}, chunk_size: {chunk_size}")
 
-    resp.raise_for_status()
-    return resp.json()
+    # Eğer çok uzunsa, '\n' üzerinden uğraşıp bölmeyi de deneyebilirdik ama
+    # v1 için düz slice yeterli, Telegram tarafında devamı bir sonraki mesajda gelir.
+    index = 0
+    part = 1
+    while index < total_len:
+        chunk = text[index:index + chunk_size]
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": chunk,
+        }
+        dprint(f"Chunk {part} gönderiliyor... (len={len(chunk)})")
+        resp = requests.post(url, json=payload, timeout=20)
+        dprint("Telegram status code:", resp.status_code)
+        dprint("Telegram response:", resp.text)
+        resp.raise_for_status()
+        index += chunk_size
+        part += 1
+
+    return True
 
 
 def print_env_debug():
